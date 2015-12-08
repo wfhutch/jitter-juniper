@@ -3,16 +3,29 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using Jitter.Models;
+using Microsoft.AspNet.Identity;
+using Microsoft.AspNet.Identity.Owin;
 
 namespace Jitter.Controllers
 {
     public class JitterController : Controller
     {
+
+        public JitterRepository Repo { get; set; }
+
+        public JitterController() : base()
+        {
+            Repo = new JitterRepository();
+        }
+
         // GET: Jitter
         // Maybe the Public feed here?
         public ActionResult Index()
         {
-            return View();
+            List<Jot> my_jots = Repo.GetAllJots();
+            //// How you send a list of anything to a view
+            return View(my_jots);
         }
 
         [Authorize]
@@ -24,7 +37,16 @@ namespace Jitter.Controllers
         [Authorize]
         public ActionResult UserFeed()
         {
-            return View();
+            //ApplicationUser
+            ApplicationUserManager _userManager = HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>();
+
+
+
+            var userId = User.Identity.GetUserId();
+            ApplicationUser app_user = _userManager.FindById(userId);
+            JitterUser me = Repo.GetAllUsers().Where(u => u.RealUser.Id == userId).Single();
+            List<Jot> list_of_jots = Repo.GetUserJots(me);
+            return View(list_of_jots);
         }
 
         // GET: Jitter/Details/5
